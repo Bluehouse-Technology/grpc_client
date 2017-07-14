@@ -134,10 +134,11 @@ process_options(Opts, Transport) ->
     TransportOpts =
         case Transport of
             ssl -> 
-                MandatorySslOpts = [{verify, verify_peer}, {fail_if_no_peer_cert, true},
+                MandatorySslOpts = [%%{verify, verify_peer}, {fail_if_no_peer_cert, true},
                                     {client_preferred_next_protocols, {client, [<<"h2">>]}}],
                 {_Ignore, ValidSslOpts} = proplists:split(TransportOpts0,
-                                                          [verify, fail_if_no_peer_cert]),
+                                                          [%%verify, fail_if_no_peer_cert
+                                                          ]),
                 ValidSslOpts ++ MandatorySslOpts;
             _ ->
                 TransportOpts0
