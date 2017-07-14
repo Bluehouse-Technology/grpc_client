@@ -1,0 +1,14 @@
+_build
+.erlang.mk
+rebar.lock
+grpc_client.d
+erlang.mk
+.eunit
+deps
+*.o
+*.beam
+*.plt
+erl_crash.dump
+ebin/*.beam
+rel/example_project
+.rebar
