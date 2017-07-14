@@ -21,7 +21,7 @@ an explanation on how the tool can be used in a Windows environment.
 ## Testing
 There are no separate tests provided for grpc_client, but the tests for
 [grpc](https://github.com/Bluehouse-Technology/grpc) (the server side) use
-and test also th client side.
+and test also the client side.
 
 ## Dependencies
 
@@ -37,7 +37,7 @@ and test also th client side.
 ## gRPC functionality
 
 The [tutorial](https://github.com/Bluehouse-Technology/grpc/blob/master/doc/tutorial.md)
-that is provided with the server covers also the client.
+that is provided with the server also covers the client.
 
 ## Acknowledgements
 
