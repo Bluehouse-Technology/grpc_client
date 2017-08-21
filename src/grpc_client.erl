@@ -1,5 +1,10 @@
 %% @doc The interface for grpc_client.
 %%
+%% This module contains the functions use a gRPC service from Erlang.
+%%
+%% See the Readme in the root folder of the repository for a reference to a
+%% more general (tutorial-style) introduction.
+%%
 -module(grpc_client).
 
 -export([compile/1, compile/2,
@@ -14,11 +19,31 @@
          stop_connection/1]).
 
 -type connection_option() ::
-    {verify_server_identity, boolean()} |
-    {server_host_override, string()} |
-    {transport_options, [ssl:ssl_option()] | [gen_tcp:option()]} |
-    {http2_client, module()} |
-    {http2_options, [term()]}.
+    verify_server_opt() |
+    server_host_override_opt() |
+    http2_client_opt() |
+    {http2_options, [http2_option()]}.
+
+-type verify_server_opt() :: {verify_server_identity, boolean()}.
+%% If true (and if the transport is ssl), the client will verify 
+%% that the subject of the server certificate matches with the domain
+%% of the server (use the 'server_host_override' to check against 
+%% another name).
+
+-type server_host_override_opt() :: {server_host_override, string()}.
+%% If the 'verify_server_identity' option is set, check the subject of 
+%% the server certificate against this name (rather than against the host name).
+
+-type http2_client_opt() :: {http2_client, module()}.
+%% A module that implements an HTPP/2 client (with a specific API). 
+%% By default 'http2_client' will be used. As an alternative
+%% 'grpc_client_chatterbox_adapter' can be used, which provides an interface to the
+%% chatterbox http/2 client, or any other HTTP/2 client implementation with the right
+%% API.
+
+-type http2_option() :: term().
+%% Passed on to the HTTP/2 client. See the documentation of 'http2_client' for the options 
+%% that can be specified for the default HTTP2/2 client.
 
 -type connection() :: grpc_client_connection:connection().
 
@@ -40,21 +65,26 @@
 
 -type get_response()  :: rcv_response() | empty.
 
--type unary_response(Type) :: 
+-type unary_response(Type) :: ok_response(Type) | error_response(Type).
+
+-type ok_response(Type) :: 
     {ok, #{result := Type,
            status_message := binary(),
            http_status := 200,
            grpc_status := 0,
            headers := metadata(),
-           trailers := metadata()}} |
-    {error, #{error_type := client | timeout | 
-              http | grpc,
+           trailers := metadata()}}.
+
+-type error_response(Type) ::
+    {error, #{error_type := error_type(),
               http_status => integer(),
               grpc_status => integer(),
               status_message => binary(),
               headers => metadata(),
               result => Type,
               trailers => grpc:metadata()}}.
+
+-type error_type() :: client | timeout | http | grpc.
 
 -export_type([connection/0,
               stream_option/0,
@@ -70,11 +100,11 @@
 compile(FileName) ->
     grpc_client:compile(FileName, []).
 
--spec compile(FileName::string(), Options::gbp_compile:opts()) -> ok.
+-spec compile(FileName::string(), Options::gpb_compile:opts()) -> ok.
 %% @doc Compile a .proto file to generate client stubs and a module
 %% to encode and decode the protobuf messages.
 %%
-%% Refer to gbp for the options. grpc will always use the options
+%% Refer to gpb for the options. grpc_client will always use the option
 %% 'maps' (so that the protobuf messages are translated to and 
 %% from maps) and the option '{i, "."}' (so that .proto files in the 
 %% current working directory will be found).
@@ -138,7 +168,7 @@ send(Stream, Msg) when is_pid(Stream),
 -spec send_last(Stream::client_stream(), Msg::map()) -> ok.
 %% @doc Send a message to server and mark it as the last message 
 %% on the stream. For simple RPC and client-streaming RPCs that 
-%% should trigger the response from the server.
+%% will trigger the response from the server.
 send_last(Stream, Msg) when is_pid(Stream),
                             is_map(Msg) ->
     grpc_client_stream:send_last(Stream, Msg).
@@ -174,14 +204,11 @@ ping(Connection, Timeout) ->
 
 -spec stop_stream(Stream::client_stream()) -> ok.
 %% @equiv stop_stream(Stream, 0)
-%%
-%% Stops a stream with "NO_ERROR" code.
 stop_stream(Stream) ->
     stop_stream(Stream, 0).
 
 -spec stop_stream(Stream::client_stream(), ErrorCode::integer()) -> ok.
-%% @equiv stop_stream(Stream, 0)
-%%
+%% @doc
 %% Stops a stream. Depending on the state of the connection a 'RST_STREAM' 
 %% frame may be sent to the server with the provided Errorcode (it should be
 %% a HTTP/2 error code, see RFC7540).
