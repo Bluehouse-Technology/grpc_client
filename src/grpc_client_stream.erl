@@ -227,6 +227,7 @@ new_stream(Connection, Service, Rpc, Encoder, Options) ->
     Metadata = proplists:get_value(metadata, Options, #{}),
     TransportOptions = proplists:get_value(http2_options, Options, []),
     RecordsEncoder = proplists:get_value(msgs_as_records, Options, []),
+    ClientPid = proplists:get_value(async_notification, Options),
     {ok, StreamId} = grpc_client_connection:new_stream(Connection, TransportOptions),
     Package = Encoder:get_package_name(),
     RpcDef = Encoder:find_rpc_def(Service, Rpc),
@@ -239,6 +240,7 @@ new_stream(Connection, Service, Rpc, Encoder, Options) ->
             rpc => Rpc,
             queue => queue:new(),
             response_pending => false,
+            async_notification => ClientPid,
             state => idle,
             encoder => Encoder,
             records_encoder => RecordsEncoder,
@@ -316,6 +318,9 @@ add_metadata(Headers, Metadata) ->
                         lists:keystore(K, 1, Acc, {K,V})
                 end, Headers, maps:to_list(Metadata)).
 
+info_response(Response, #{async_notification := Client} = Stream) when is_pid(Client) ->
+    Client ! {notification,Response},
+    {noreply, Stream};
 info_response(Response, #{response_pending := true,
                           client := Client} = Stream) ->
     gen_server:reply(Client, Response),
