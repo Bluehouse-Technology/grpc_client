@@ -227,13 +227,12 @@ new_stream(Connection, Service, Rpc, Encoder, Options) ->
     Metadata = proplists:get_value(metadata, Options, #{}),
     TransportOptions = proplists:get_value(http2_options, Options, []),
     {ok, StreamId} = grpc_client_connection:new_stream(Connection, TransportOptions),
-    Package = Encoder:get_package_name(),
     RpcDef = Encoder:find_rpc_def(Service, Rpc),
     %% the gpb rpc def has 'input', 'output' etc.
     %% All the information is combined in 1 map, 
     %% which is is the state of the gen_server.
     RpcDef#{stream_id => StreamId,
-            package => [atom_to_list(Package),$.],
+            package => [],
             service => Service,
             rpc => Rpc,
             queue => queue:new(),
