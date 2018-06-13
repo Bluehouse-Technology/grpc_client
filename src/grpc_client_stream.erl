@@ -319,7 +319,7 @@ add_metadata(Headers, Metadata) ->
                 end, Headers, maps:to_list(Metadata)).
 
 info_response(Response, #{async_notification := Client} = Stream) when is_pid(Client) ->
-    Client ! {notification,Response},
+    Client ! {grpc_notification,Response},
     {noreply, Stream};
 info_response(Response, #{response_pending := true,
                           client := Client} = Stream) ->
