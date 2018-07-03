@@ -1,6 +1,6 @@
 PROJECT = grpc_client
 PROJECT_DESCRIPTION = Erlang gRPC client
-PROJECT_VERSION = 0.1.0
+PROJECT_VERSION = 0.2.0
 
 # Whitespace to be used when creating files from templates.
 SP = 4
