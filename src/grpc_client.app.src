@@ -4,4 +4,4 @@
   {modules,[]},
   {registered, []},
   {env, []},
-  {applications,[]}]}.
+  {applications,[grpc_lib]}]}.
