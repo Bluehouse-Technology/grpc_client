@@ -140,7 +140,7 @@ connect(Transport, Host, Port) ->
 -spec connect(Transport::tcp|ssl,
               Host::string(),
               Port::integer(),
-              Options::[connection_option()]) -> {ok, connection()}.
+              Options::[connection_option()]) -> {ok, connection()} | {error, term()}.
 %% @doc Start a connection to a gRPC server.
 %%
 %% If 'verify_server_identity' is true (and Transport == ssl), the client will

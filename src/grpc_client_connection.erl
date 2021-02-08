@@ -50,7 +50,7 @@
 -spec new(Transport::tcp|ssl,
           Host::string(),
           Port::integer(),
-          Options::[connection_option()]) -> {ok, connection()}.
+          Options::[connection_option()]) -> {ok, connection()} | {error, term()}.
 %% @doc Open a new http/2 connection and check authorisation.
 new(Transport, Host, Port, Options) ->
     {GrpcOptions, H2Options} = process_options(Options, Transport),
