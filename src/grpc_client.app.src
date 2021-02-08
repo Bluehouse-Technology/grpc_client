@@ -2,6 +2,7 @@
  [{description,"gRPC client in Erlang"},
   {vsn,"0.2.0"},
   {modules,[]},
+  {applications, [grpc_lib,http2_client]},
   {registered, []},
   {env, []},
   {applications,[]}]}.

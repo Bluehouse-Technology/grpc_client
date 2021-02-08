@@ -71,10 +71,12 @@
 -type metadata() :: #{metadata_key() => metadata_value()}.
 -type compression_method() :: none | gzip.
 
+-type msg_type() :: map() | tuple().
 -type stream_option() ::
     {metadata, metadata()} |
     {compression, compression_method()} |
-    {http2_options, [term()]}.
+    {http2_options, [term()]} |
+    {msgs_as_records,module()}.
 
 -type client_stream() :: pid().
 
@@ -178,18 +180,16 @@ new_stream(Connection, Service, Rpc, DecoderModule) ->
 new_stream(Connection, Service, Rpc, DecoderModule, Options) ->
     grpc_client_stream:new(Connection, Service, Rpc, DecoderModule, Options).
 
--spec send(Stream::client_stream(), Msg::map()) -> ok.
+-spec send(Stream::client_stream(), Msg::msg_type()) -> ok.
 %% @doc Send a message from the client to the server.
-send(Stream, Msg) when is_pid(Stream),
-                       is_map(Msg) ->
+send(Stream, Msg) when is_pid(Stream) ->
     grpc_client_stream:send(Stream, Msg).
 
--spec send_last(Stream::client_stream(), Msg::map()) -> ok.
+-spec send_last(Stream::client_stream(), Msg::msg_type()) -> ok.
 %% @doc Send a message to server and mark it as the last message 
 %% on the stream. For simple RPC and client-streaming RPCs that 
 %% will trigger the response from the server.
-send_last(Stream, Msg) when is_pid(Stream),
-                            is_map(Msg) ->
+send_last(Stream, Msg) when is_pid(Stream) ->
     grpc_client_stream:send_last(Stream, Msg).
 
 -spec rcv(Stream::client_stream()) -> rcv_response().
@@ -240,7 +240,7 @@ stop_connection(Connection) ->
     grpc_client_connection:stop(Connection).
 
 -spec unary(Connection::connection(),
-            Message::map(), Service::atom(), Rpc::atom(),
+            Message::msg_type(), Service::atom(), Rpc::atom(),
             Decoder::module(),
             Options::[stream_option() |
                       {timeout, timeout()}]) -> unary_response(map()).

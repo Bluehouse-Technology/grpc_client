@@ -226,6 +226,8 @@ new_stream(Connection, Service, Rpc, Encoder, Options) ->
     Compression = proplists:get_value(compression, Options, none),
     Metadata = proplists:get_value(metadata, Options, #{}),
     TransportOptions = proplists:get_value(http2_options, Options, []),
+    RecordsEncoder = proplists:get_value(msgs_as_records, Options, []),
+    ClientPid = proplists:get_value(async_notification, Options),
     {ok, StreamId} = grpc_client_connection:new_stream(Connection, TransportOptions),
     RpcDef = Encoder:find_rpc_def(Service, Rpc),
     %% the gpb rpc def has 'input', 'output' etc.
@@ -237,8 +239,10 @@ new_stream(Connection, Service, Rpc, Encoder, Options) ->
             rpc => Rpc,
             queue => queue:new(),
             response_pending => false,
+            async_notification => ClientPid,
             state => idle,
             encoder => Encoder,
+            records_encoder => RecordsEncoder,
             connection => Connection,
             headers_sent => false,
             metadata => Metadata,
@@ -313,6 +317,9 @@ add_metadata(Headers, Metadata) ->
                         lists:keystore(K, 1, Acc, {K,V})
                 end, Headers, maps:to_list(Metadata)).
 
+info_response(Response, #{async_notification := Client} = Stream) when is_pid(Client) ->
+    Client ! {grpc_notification,Response},
+    {noreply, Stream};
 info_response(Response, #{response_pending := true,
                           client := Client} = Stream) ->
     gen_server:reply(Client, Response),
@@ -324,17 +331,24 @@ info_response(Response, #{queue := Queue} = Stream) ->
 %% TODO: fix the error handling, currently it is very hard to understand the
 %% error that results from a bad message (Map).
 encode(#{encoder := Encoder,
-         input := MsgType,
-         compression := CompressionMethod}, Map) ->
-    %% RequestData = Encoder:encode_msg(Map, MsgType),
-    try Encoder:encode_msg(Map, MsgType) of
-        RequestData ->
+        records_encoder := RecordsEncoder,
+        input := MsgType,
+        compression := CompressionMethod}, Msg) ->
+    try
+        begin
+            RequestData = case is_map(Msg) of
+                true ->
+                    Encoder:encode_msg(Msg, MsgType);
+                false when is_tuple(Msg) ->
+                    RecordsEncoder:encode_msg(Msg)
+            end,
             maybe_compress(RequestData, CompressionMethod)
+        end
     catch
         error:function_clause ->
-          throw({error, {failed_to_encode, MsgType, Map}});
+            throw({error, {failed_to_encode, MsgType, Msg}});
         Error:Reason ->
-          throw({error, {Error, Reason}})
+            throw({error, {Error, Reason}})
     end.
 
 maybe_compress(Encoded, none) ->
@@ -350,12 +364,18 @@ maybe_compress(_Encoded, Other) ->
 decode(Encoded, Binary,
        #{response_encoding := Method,
          encoder := Encoder,
+         records_encoder := RecordsEncoder,
          output := MsgType}) ->
-    Message = case Encoded of 
+    Message = case Encoded of
                   1 -> decompress(Binary, Method);
                   0 -> Binary
               end,
-    Encoder:decode_msg(Message, MsgType).
+    case RecordsEncoder == [] of
+        true ->
+            Encoder:decode_msg(Message, MsgType);
+        _ ->
+            RecordsEncoder:decode_msg(Message, MsgType)
+    end.
 
 decompress(Compressed, <<"gzip">>) ->
     zlib:gunzip(Compressed);
