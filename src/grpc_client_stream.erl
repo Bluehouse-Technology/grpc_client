@@ -24,9 +24,9 @@
 
 -behaviour(gen_server).
 
--export([new/5, 
+-export([new/5,
          send/2, send_last/2,
-         get/1, rcv/1, rcv/2, 
+         get/1, rcv/1, rcv/2,
          state/1,
          call_rpc/3,
          stop/2]).
@@ -55,7 +55,7 @@
           Encoder::module(),
           Options::list()) -> {ok, Pid::pid()} | {error, Reason::term()}.
 new(Connection, Service, Rpc, Encoder, Options) ->
-    gen_server:start_link(?MODULE, 
+    gen_server:start_link(?MODULE,
                           {Connection, Service, Rpc, Encoder, Options}, []).
 
 send(Pid, Message) ->
@@ -80,7 +80,7 @@ state(Pid) ->
 -spec stop(Stream::pid(), ErrorCode::integer()) -> ok.
 %% @doc Close (stop/clean up) the stream.
 %%
-%% If the stream is in open or half closed state, a RST_STREAM frame 
+%% If the stream is in open or half closed state, a RST_STREAM frame
 %% will be sent to the server.
 stop(Pid, ErrorCode) ->
     gen_server:call(Pid, {stop, ErrorCode}).
@@ -99,7 +99,7 @@ call_rpc(Pid, Message, Timeout) ->
 %% gen_server implementation
 %% @private
 init({Connection, Service, Rpc, Encoder, Options}) ->
-    try 
+    try
         {ok, new_stream(Connection, Service, Rpc, Encoder, Options)}
     catch
         _Class:_Error ->
@@ -158,14 +158,14 @@ handle_info({'RECV_DATA', StreamId, Bin}, Stream) ->
     %% This is a workaround to deal with the different format from Chatterbox.
     %% TODO: find a better way to do this.
     handle_info({'RECV_DATA', StreamId, Bin, false, false}, Stream);
-handle_info({'RECV_DATA', StreamId, Bin, 
-             _StreamWindowError, _ConnectionWindowError}, 
+handle_info({'RECV_DATA', StreamId, Bin,
+             _StreamWindowError, _ConnectionWindowError},
             #{stream_id := StreamId,
               buffer := Buffer} = Stream) ->
     case <<Buffer/binary, Bin/binary>> of
         <<Encoded:8, Size:32, Message:Size/binary, Rest/binary>> ->
             Response =
-                try 
+                try
                    {data, decode(Encoded, Message, Stream#{buffer => Rest})}
                 catch
                    throw:{error, Message} ->
@@ -181,7 +181,7 @@ handle_info({'RECV_DATA', StreamId, Bin,
 handle_info({'RECV_HEADERS', StreamId, Headers},
             #{stream_id := StreamId,
               state := StreamState} = Stream) ->
-    HeadersMap = maps:from_list([grpc_lib:maybe_decode_header(H) 
+    HeadersMap = maps:from_list([grpc_lib:maybe_decode_header(H)
                                  || H <- Headers]),
     Encoding = maps:get(<<"grpc-encoding">>, HeadersMap, none),
     NewState = case StreamState of
@@ -190,7 +190,7 @@ handle_info({'RECV_HEADERS', StreamId, Headers},
                    _ ->
                        StreamState
                end,
-    info_response({headers, HeadersMap}, 
+    info_response({headers, HeadersMap},
                   Stream#{response_encoding => Encoding,
                           state => NewState});
 handle_info({'END_STREAM', StreamId},
@@ -229,7 +229,7 @@ new_stream(Connection, Service, Rpc, Encoder, Options) ->
     {ok, StreamId} = grpc_client_connection:new_stream(Connection, TransportOptions),
     RpcDef = Encoder:find_rpc_def(Service, Rpc),
     %% the gpb rpc def has 'input', 'output' etc.
-    %% All the information is combined in 1 map, 
+    %% All the information is combined in 1 map,
     %% which is is the state of the gen_server.
     RpcDef#{stream_id => StreamId,
             package => [],
@@ -261,7 +261,7 @@ send_msg(#{stream_id := StreamId,
             ok
     end,
     Opts = [{end_stream, EndStream}],
-    NewState = 
+    NewState =
         case {EndStream, State} of
             {false, _} when State == idle ->
                 open;
@@ -307,7 +307,7 @@ default_headers(#{service := Service,
      {<<"te">>, <<"trailers">>} | Headers1].
 
 add_metadata(Headers, Metadata) ->
-    lists:foldl(fun(H, Acc) -> 
+    lists:foldl(fun(H, Acc) ->
                         {K, V} = grpc_lib:maybe_encode_header(H),
                         %% if the key exists, replace it.
                         lists:keystore(K, 1, Acc, {K,V})
@@ -351,7 +351,7 @@ decode(Encoded, Binary,
        #{response_encoding := Method,
          encoder := Encoder,
          output := MsgType}) ->
-    Message = case Encoded of 
+    Message = case Encoded of
                   1 -> decompress(Binary, Method);
                   0 -> Binary
               end,

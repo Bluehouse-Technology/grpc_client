@@ -19,7 +19,7 @@
 
 %% @private For each connection a process is started by the HTTP/2 client.
 %% For each new stream a 'client_stream' process is started
-%% (see grpc_client_stream.erl). The connection process sends messages to the 
+%% (see grpc_client_stream.erl). The connection process sends messages to the
 %% stream process when data comes in.
 -module(grpc_client_connection).
 
@@ -145,14 +145,14 @@ scheme(tcp) -> <<"http">>.
 
 %% The 'http2_options' must be passed on to the HTTP/2 client.
 %%
-%% To make sure that the ssl connection meets the gRPC standard, some options are 
+%% To make sure that the ssl connection meets the gRPC standard, some options are
 %% added if ssl is to be used.
 process_options(Opts, Transport) ->
     {TransportOpts0, OtherOpts} =
         grpc_lib:keytake(transport_options, Opts, []),
     TransportOpts =
         case Transport of
-            ssl -> 
+            ssl ->
                 MandatorySslOpts = [%%{verify, verify_peer}, {fail_if_no_peer_cert, true},
                                     {client_preferred_next_protocols, {client, [<<"h2">>]}}],
                 {_Ignore, ValidSslOpts} = proplists:split(TransportOpts0,

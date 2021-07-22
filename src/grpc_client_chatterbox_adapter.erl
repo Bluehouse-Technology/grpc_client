@@ -20,7 +20,7 @@
 %% @doc Adapter for Chatterbox, so that the Chatterbox HTTP/2 client can
 %% be used for the HTTP/2 client functionality required for gRPC.
 %%
-%% Note that this assumes that a fork of Chatterbox is used: 
+%% Note that this assumes that a fork of Chatterbox is used:
 %% https://github.com/willemdj/chatterbox
 -module(grpc_client_chatterbox_adapter).
 
@@ -82,7 +82,7 @@ send_data(Pid, StreamId, Data, Options) ->
     h2_connection:send_body(Pid, StreamId, Data, send_options(Options)).
 
 
--spec rst_stream(connection(), stream_id(), ErrorCode::integer()) -> 
+-spec rst_stream(connection(), stream_id(), ErrorCode::integer()) ->
   ok | {error, term()}.
 %% @doc Send a RST_STREAM frame
 rst_stream(_Pid, _StreamId, _ErrorCode) ->

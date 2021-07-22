@@ -44,24 +44,24 @@
     {http2_options, [http2_option()]}.
 
 -type verify_server_opt() :: {verify_server_identity, boolean()}.
-%% If true (and if the transport is ssl), the client will verify 
+%% If true (and if the transport is ssl), the client will verify
 %% that the subject of the server certificate matches with the domain
-%% of the server (use the 'server_host_override' to check against 
+%% of the server (use the 'server_host_override' to check against
 %% another name).
 
 -type server_host_override_opt() :: {server_host_override, string()}.
-%% If the 'verify_server_identity' option is set, check the subject of 
+%% If the 'verify_server_identity' option is set, check the subject of
 %% the server certificate against this name (rather than against the host name).
 
 -type http2_client_opt() :: {http2_client, module()}.
-%% A module that implements an HTPP/2 client (with a specific API). 
+%% A module that implements an HTPP/2 client (with a specific API).
 %% By default 'http2_client' will be used. As an alternative
 %% 'grpc_client_chatterbox_adapter' can be used, which provides an interface to the
 %% chatterbox http/2 client, or any other HTTP/2 client implementation with the right
 %% API.
 
 -type http2_option() :: term().
-%% Passed on to the HTTP/2 client. See the documentation of 'http2_client' for the options 
+%% Passed on to the HTTP/2 client. See the documentation of 'http2_client' for the options
 %% that can be specified for the default HTTP2/2 client.
 
 -type connection() :: grpc_client_connection:connection().
@@ -78,7 +78,7 @@
 
 -type client_stream() :: pid().
 
--type rcv_response() :: {data, map()} | 
+-type rcv_response() :: {data, map()} |
                         {headers, metadata()} |
                         eof | {error, term()}.
 
@@ -86,7 +86,7 @@
 
 -type unary_response(Type) :: ok_response(Type) | error_response(Type).
 
--type ok_response(Type) :: 
+-type ok_response(Type) ::
     {ok, #{result := Type,
            status_message := binary(),
            http_status := 200,
@@ -124,8 +124,8 @@ compile(FileName) ->
 %% to encode and decode the protobuf messages.
 %%
 %% Refer to gpb for the options. grpc_client will always use the option
-%% 'maps' (so that the protobuf messages are translated to and 
-%% from maps) and the option '{i, "."}' (so that .proto files in the 
+%% 'maps' (so that the protobuf messages are translated to and
+%% from maps) and the option '{i, "."}' (so that .proto files in the
 %% current working directory will be found).
 compile(FileName, Options) ->
     grpc_lib_compile:file(FileName, [{generate, client} | Options]).
@@ -148,30 +148,30 @@ connect(Transport, Host, Port) ->
 %% identical to Host.
 %%
 %% If it is known that the server returns a certificate with another subject
-%% than the host name, the 'server_host_override' option can be used to 
+%% than the host name, the 'server_host_override' option can be used to
 %% specify that other subject.
 %%
 %% The transport options will be passed to the selected Transport when
 %% establishing the connection.
 %%
 %% The option {'http2_client', module()} enables the selection of
-%% an http2 client. The default is http2_client, as an alternative it 
-%% is possible to select 'grpc_client_chatterbox_adapter', which 
-%% implements an adapter for the chatterbox http/2 client. 
+%% an http2 client. The default is http2_client, as an alternative it
+%% is possible to select 'grpc_client_chatterbox_adapter', which
+%% implements an adapter for the chatterbox http/2 client.
 connect(Transport, Host, Port, Options) ->
     grpc_client_connection:new(Transport, Host, Port, Options).
 
--spec new_stream(Connection::connection(), 
-                 Service::atom(), 
-                 Rpc::atom(), 
+-spec new_stream(Connection::connection(),
+                 Service::atom(),
+                 Rpc::atom(),
                  DecoderModule::module()) -> {ok, client_stream()}.
-%% @equiv new_stream(Connection, Service, Rpc, DecoderModule, []) 
+%% @equiv new_stream(Connection, Service, Rpc, DecoderModule, [])
 new_stream(Connection, Service, Rpc, DecoderModule) ->
     new_stream(Connection, Service, Rpc, DecoderModule, []).
 
--spec new_stream(Connection::connection(), 
-                 Service::atom(), 
-                 Rpc::atom(), 
+-spec new_stream(Connection::connection(),
+                 Service::atom(),
+                 Rpc::atom(),
                  DecoderModule::module(),
                  Options::[stream_option()]) -> {ok, client_stream()}.
 %% @doc Create a new stream to start a new RPC.
@@ -185,8 +185,8 @@ send(Stream, Msg) when is_pid(Stream),
     grpc_client_stream:send(Stream, Msg).
 
 -spec send_last(Stream::client_stream(), Msg::map()) -> ok.
-%% @doc Send a message to server and mark it as the last message 
-%% on the stream. For simple RPC and client-streaming RPCs that 
+%% @doc Send a message to server and mark it as the last message
+%% on the stream. For simple RPC and client-streaming RPCs that
 %% will trigger the response from the server.
 send_last(Stream, Msg) when is_pid(Stream),
                             is_map(Msg) ->
@@ -196,18 +196,18 @@ send_last(Stream, Msg) when is_pid(Stream),
 %% @equiv rcv(Stream, infinity)
 rcv(Stream) ->
     grpc_client_stream:rcv(Stream).
-   
+
 -spec rcv(Stream::client_stream(), Timeout::timeout()) -> rcv_response().
-%% @doc Receive a message from the server. This is a blocking 
+%% @doc Receive a message from the server. This is a blocking
 %% call, it returns when a message has been received or after Timeout.
 %% Timeout is in milliseconds.
 %%
 %% Returns 'eof' after the last message from the server has been read.
 rcv(Stream, Timeout) ->
     grpc_client_stream:rcv(Stream, Timeout).
-     
+
 -spec get(Stream::client_stream()) -> get_response().
-%% @doc Get a message from the stream, if there is one in the queue. If not return 
+%% @doc Get a message from the stream, if there is one in the queue. If not return
 %% 'empty'. This is a non-blocking call.
 %%
 %% Returns 'eof' after the last message from the server has been read.
@@ -228,7 +228,7 @@ stop_stream(Stream) ->
 
 -spec stop_stream(Stream::client_stream(), ErrorCode::integer()) -> ok.
 %% @doc
-%% Stops a stream. Depending on the state of the connection a 'RST_STREAM' 
+%% Stops a stream. Depending on the state of the connection a 'RST_STREAM'
 %% frame may be sent to the server with the provided Errorcode (it should be
 %% a HTTP/2 error code, see RFC7540).
 stop_stream(Stream, ErrorCode) ->
