@@ -1,6 +1,6 @@
 {application,grpc_client,
  [{description,"gRPC client in Erlang"},
-  {vsn,"0.2.0"},
+  {vsn,"git"},
   {modules,[]},
   {registered, []},
   {env, []},
