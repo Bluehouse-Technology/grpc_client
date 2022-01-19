@@ -34,6 +34,7 @@
 %% gen_server behaviors
 -export([code_change/3, handle_call/3, handle_cast/2, handle_info/2, init/1, terminate/2]).
 
+-type connection() :: grpc_client_connection:connection().
 -type stream() ::
     #{stream_id := integer(),
       package := string(),
@@ -49,7 +50,7 @@
       compression := grpc_client:compression_method(),
       buffer := binary()}.
 
--spec new(Connection::pid(),
+-spec new(Connection::connection(),
           Service::atom(),
           Rpc::atom(),
           Encoder::module(),
@@ -110,8 +111,6 @@ init({Connection, Service, Rpc, Encoder, Options}) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
--spec handle_call(term(), term(), stream()) ->
-    term().
 %% @private
 handle_call(state, _From, #{state := State} = Stream) ->
     {reply, State, Stream};

@@ -37,7 +37,8 @@
 
 -type connection() :: #{http_connection := pid(),
                         host := binary(),
-                        scheme := binary()}.
+                        scheme := binary(),
+                        client := atom()}.
 
 -type stream_id() :: integer().
 
