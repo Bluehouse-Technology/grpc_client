@@ -227,11 +227,12 @@ new_stream(Connection, Service, Rpc, Encoder, Options) ->
     TransportOptions = proplists:get_value(http2_options, Options, []),
     {ok, StreamId} = grpc_client_connection:new_stream(Connection, TransportOptions),
     RpcDef = Encoder:find_rpc_def(Service, Rpc),
+    Package = Encoder:get_package_name(),
     %% the gpb rpc def has 'input', 'output' etc.
     %% All the information is combined in 1 map,
     %% which is is the state of the gen_server.
     RpcDef#{stream_id => StreamId,
-            package => [],
+            package => Package,
             service => Service,
             rpc => Rpc,
             queue => queue:new(),
@@ -288,8 +289,11 @@ default_headers(#{service := Service,
                   connection := #{host := Host,
                                   scheme := Scheme}
                  }) ->
-    Path = iolist_to_binary(["/", Package, atom_to_list(Service),
-                             "/", atom_to_list(Rpc)]),
+    ServiceFullName = case Package of
+                      undefined -> atom_to_list(Service);
+                      _ -> [atom_to_list(Package), ".", atom_to_list(Service)]
+                    end,
+    Path = iolist_to_binary(["/", ServiceFullName, "/", atom_to_list(Rpc)]),
     Headers1 = case Compression of
                    none ->
                        [];
